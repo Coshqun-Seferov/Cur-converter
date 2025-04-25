@@ -12,7 +12,7 @@ let selectedBaseCurrency = "RUB";
 let selectedTargetCurrency = "USD";
 
 let currentRate = null;
-const API_KEY = `fedbc98d-db4d-4726-ad28-6c687ef76afb`;
+const API_KEY = `28f165017fa42aa6ccb8c9a4`;
 
 document.querySelector(".menu-toggle").addEventListener("click", () => {
   document.querySelector(".lists").classList.toggle("show");
