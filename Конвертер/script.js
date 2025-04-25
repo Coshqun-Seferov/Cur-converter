@@ -118,12 +118,17 @@ const convertFirstInput = async () => {
     rightratebox.textContent = "";
     return;
   }
-  if (selectedBaseCurrency === selectedTargetCurrency) {
-    curInput2.value = curInput1.value;
-    leftratebox.textContent = `1 ${selectedBaseCurrency} = 1 ${selectedTargetCurrency}`;
-    rightratebox.textContent = `1 ${selectedTargetCurrency} = 1 ${selectedBaseCurrency}`;
-    return;
-  } else {
+  if (curInput1.value.trim() === "") {
+  const rate = await fetchRate(selectedBaseCurrency, selectedTargetCurrency);
+  if (rate !== null) {
+    const fixedResult = rate.toFixed(5);
+    const reversed = (1 / rate).toFixed(5);
+    leftratebox.textContent = `1 ${selectedBaseCurrency} = ${fixedResult} ${selectedTargetCurrency}`;
+    rightratebox.textContent = `1 ${selectedTargetCurrency} = ${reversed} ${selectedBaseCurrency}`;
+  }
+  curInput2.value = "";
+  return;
+} else {
   }
 
   const rate = await fetchRate(selectedBaseCurrency, selectedTargetCurrency);
