@@ -1,63 +1,62 @@
-const box1 = document.querySelector(".box1");
-const box2 = document.querySelector(".box2");
-const curInput1 = document.querySelector(".cur-input-1");
-const curInput2 = document.querySelector(".cur-input-2");
-const leftButtons = document.querySelectorAll(".box1 button");
-const rightButtons = document.querySelectorAll(".box2 button");
-const rightratebox = document.getElementById("rightratebox");
-const leftratebox = document.getElementById("leftratebox");
-const changeBtn = document.querySelector(".fa-retweet");
+const leftBox = document.querySelector(".box1");
+const rightBox = document.querySelector(".box2");
+const inputOne = document.querySelector(".cur-input-1");
+const inputTwo = document.querySelector(".cur-input-2");
+const leftCurrencyButtons = document.querySelectorAll(".box1 button");
+const rightCurrencyButtons = document.querySelectorAll(".box2 button");
+const rightRateDisplay = document.getElementById("rightratebox");
+const leftRateDisplay = document.getElementById("leftratebox");
+const swapButton = document.querySelector(".fa-retweet");
 
-let selectedBaseCurrency = "RUB";
-let selectedTargetCurrency = "USD";
+let baseCurrency = "RUB";
+let targetCurrency = "USD";
 
-let currentRate = null;
-const API_KEY = `28f165017fa42aa6ccb8c9a4`;
+let exchangeRate = null;
+const API_TOKEN = `28f165017fa42aa6ccb8c9a4`;
 
 document.querySelector(".menu-toggle").addEventListener("click", () => {
-  document.querySelector(".lists").classList.toggle("show");
+  document.querySelector(".currency-list").classList.toggle("show");
 });
 
-let isOnline = navigator.onLine;
-let lastConversion = null;
-const connectionStatus = document.getElementById("connection-status");
+let isConnected = navigator.onLine;
+let lastUpdatedInput = null;
+const connectionIndicator = document.getElementById("connection-status");
 
 window.addEventListener("offline", () => {
-  isOnline = false;
-  connectionStatus.textContent = "Нет соединение к интернету";
-  connectionStatus.classList.remove("online");
-  connectionStatus.style.display = "block";
+  isConnected = false;
+  connectionIndicator.textContent = "No internet connection";
+  connectionIndicator.classList.remove("online");
+  connectionIndicator.style.display = "block";
 });
 
 window.addEventListener("online", () => {
-  isOnline = true;
-
-  connectionStatus.textContent = "Интернет подключен";
-  connectionStatus.classList.add("online");
-  connectionStatus.style.display = "block";
+  isConnected = true;
+  connectionIndicator.textContent = "Connected to the internet";
+  connectionIndicator.classList.add("online");
+  connectionIndicator.style.display = "block";
 
   setTimeout(() => {
-    connectionStatus.style.display = "none";
+    connectionIndicator.style.display = "none";
   }, 2000);
 
-  if (lastConversion === "input1") {
-    convertFirstInput();
-  } else if (lastConversion === "input2") {
-    convertSecondInput();
+  if (lastUpdatedInput === "input1") {
+    convertInputOne();
+  } else if (lastUpdatedInput === "input2") {
+    convertInputTwo();
   }
 });
 
-const setActiveButton = () => {
-  leftButtons.forEach((button) => {
-    if (button.textContent === selectedBaseCurrency) {
+const highlightActiveButton = () => {
+  leftCurrencyButtons.forEach((button) => {
+    if (button.textContent === baseCurrency) {
       button.classList.add("activeButton");
     } else {
       button.classList.remove("activeButton");
     }
   });
 
-  rightButtons.forEach((button) => {
-    if (button.textContent === selectedTargetCurrency) {
+  rightCurrencyButtons.forEach((button) => {
+    if (button.textContent === targetCurrency) {
       button.classList.add("activeButton");
     } else {
       button.classList.remove("activeButton");
@@ -65,25 +64,25 @@ const setActiveButton = () => {
   });
 };
 
-const fetchRate = async (leftCurrency, rightCurrency) => {
-  if (leftCurrency === rightCurrency) {
-    leftratebox.textContent = `1 ${leftCurrency} = 1 ${rightCurrency}`;
-    rightratebox.textContent = `1 ${rightCurrency} = 1 ${leftCurrency}`;
-    curInput2.value = curInput1.value;
+const fetchExchangeRate = async (base, target) => {
+  if (base === target) {
+    leftRateDisplay.textContent = `1 ${base} = 1 ${target}`;
+    rightRateDisplay.textContent = `1 ${target} = 1 ${base}`;
+    inputTwo.value = inputOne.value;
     return 1;
   }
 
-  const url = `https://v6.exchangerate-api.com/v6/${API_KEY}/pair/${selectedBaseCurrency}/${selectedTargetCurrency}`;
+  const apiEndpoint = `https://v6.exchangerate-api.com/v6/${API_TOKEN}/pair/${baseCurrency}/${targetCurrency}`;
 
   try {
-    const res = await fetch(url);
-    const data = await res.json();
+    const response = await fetch(apiEndpoint);
+    const data = await response.json();
     const rate = data["conversion_rate"];
     console.log("Fetched Rate:", rate);
     console.log("Fetched data:", data);
 
     if (rate) {
-      currentRate = rate;
+      exchangeRate = rate;
       return rate;
     } else {
       console.log("No rate found");
@@ -95,147 +94,147 @@ const fetchRate = async (leftCurrency, rightCurrency) => {
   }
 };
 
-const calculateResult = (inputVal, rate) => {
-  return inputVal * rate;
+const computeConvertedValue = (value, rate) => {
+  return value * rate;
 };
 
-let BaseToTarget;
+let isBaseToTarget;
 
-const convertFirstInput = async () => {
-  BaseToTarget = true;
-  handleInput(curInput1);
-  lastConversion = "input1";
-  if (!isOnline) {
-    if (selectedBaseCurrency === selectedTargetCurrency) {
-      curInput2.value = curInput1.value;
+const convertInputOne = async () => {
+  isBaseToTarget = true;
+  validateInput(inputOne);
+  lastUpdatedInput = "input1";
+
+  if (!isConnected) {
+    if (baseCurrency === targetCurrency) {
+      inputTwo.value = inputOne.value;
     }
     return;
   }
 
-  if (curInput1.value.trim() === "") {
-    curInput2.value = "";
-    leftratebox.textContent = "";
-    rightratebox.textContent = "";
+  if (inputOne.value.trim() === "") {
+    inputTwo.value = "";
+    leftRateDisplay.textContent = "";
+    rightRateDisplay.textContent = "";
     return;
   }
-  if (curInput1.value.trim() === "") {
-  const rate = await fetchRate(selectedBaseCurrency, selectedTargetCurrency);
-  if (rate !== null) {
-    const fixedResult = rate.toFixed(5);
-    const reversed = (1 / rate).toFixed(5);
-    leftratebox.textContent = `1 ${selectedBaseCurrency} = ${fixedResult} ${selectedTargetCurrency}`;
-    rightratebox.textContent = `1 ${selectedTargetCurrency} = ${reversed} ${selectedBaseCurrency}`;
-  }
-  curInput2.value = "";
-  return;
-} else {
-  }
 
-  const rate = await fetchRate(selectedBaseCurrency, selectedTargetCurrency);
-  if (rate !== null) {
-    if (BaseToTarget) {
-      const inputVal = parseFloat(curInput1.value) || 0;
-      if (!isNaN(inputVal) && currentRate !== null) {
-        const result = calculateResult(inputVal, rate);
-        curInput2.value = result.toFixed(4);
+  if (baseCurrency === targetCurrency) {
+    inputTwo.value = inputOne.value;
+    leftRateDisplay.textContent = `1 ${baseCurrency} = 1 ${targetCurrency}`;
+    rightRateDisplay.textContent = `1 ${targetCurrency} = 1 ${baseCurrency}`;
+    return;
+  } else {
+    const rate = await fetchExchangeRate(baseCurrency, targetCurrency);
+    if (rate !== null) {
+      if (isBaseToTarget) {
+        const inputValue = parseFloat(inputOne.value) || 0;
+        if (!isNaN(inputValue) && exchangeRate !== null) {
+          const result = computeConvertedValue(inputValue, rate);
+          inputTwo.value = result.toFixed(4);
+        }
+
+        const fixedResult = rate.toFixed(5);
+        const reversedRate = (1 / rate).toFixed(5);
+        leftRateDisplay.textContent = `1 ${baseCurrency} = ${fixedResult} ${targetCurrency}`;
+        rightRateDisplay.textContent = `1 ${targetCurrency} = ${reversedRate} ${baseCurrency}`;
       }
-      const fixedResult = rate.toFixed(5);
-      const reversed = (1 / rate).toFixed(5);
-      leftratebox.textContent = `1 ${selectedBaseCurrency} = ${fixedResult} ${selectedTargetCurrency}`;
-      rightratebox.textContent = `1 ${selectedTargetCurrency} = ${reversed} ${selectedBaseCurrency}`;
     }
   }
 };
-const convertSecondInput = async () => {
-  BaseToTarget = false;
-  handleInput(curInput2);
-  if (curInput2.value.trim() === "") {
-    curInput1.value = "";
-    leftratebox.textContent = "";
-    rightratebox.textContent = "";
-    return;
-  }
-  if (selectedTargetCurrency === selectedBaseCurrency) {
-    curInput1.value = curInput2.value;
-    leftratebox.textContent = `1 ${selectedBaseCurrency} = 1 ${selectedTargetCurrency}`;
-    rightratebox.textContent = `1 ${selectedTargetCurrency} = 1 ${selectedBaseCurrency}`;
+
+const convertInputTwo = async () => {
+  isBaseToTarget = false;
+  validateInput(inputTwo);
+
+  if (inputTwo.value.trim() === "") {
+    inputOne.value = "";
+    leftRateDisplay.textContent = "";
+    rightRateDisplay.textContent = "";
     return;
   }
 
-  const rate = await fetchRate(selectedTargetCurrency, selectedBaseCurrency);
+  if (targetCurrency === baseCurrency) {
+    inputOne.value = inputTwo.value;
+    leftRateDisplay.textContent = `1 ${baseCurrency} = 1 ${targetCurrency}`;
+    rightRateDisplay.textContent = `1 ${targetCurrency} = 1 ${baseCurrency}`;
+    return;
+  }
+
+  const rate = await fetchExchangeRate(targetCurrency, baseCurrency);
   if (rate !== null) {
-    if (!BaseToTarget) {
-      const inputValue = parseFloat(curInput2.value);
+    if (!isBaseToTarget) {
+      const inputValue = parseFloat(inputTwo.value);
       if (!isNaN(inputValue)) {
-        const result = calculateResult(inputValue, rate);
-        curInput1.value = result.toFixed(4);
+        const result = computeConvertedValue(inputValue, rate);
+        inputOne.value = result.toFixed(4);
       }
+
       const fixedResult = rate.toFixed(5);
-      const reversed = (1 / rate).toFixed(5);
-      leftratebox.textContent = `1 ${selectedBaseCurrency} = ${reversed} ${selectedTargetCurrency}`;
-      rightratebox.textContent = `1 ${selectedTargetCurrency} = ${fixedResult} ${selectedBaseCurrency}`;
+      const reversedRate = (1 / rate).toFixed(5);
+      leftRateDisplay.textContent = `1 ${baseCurrency} = ${reversedRate} ${targetCurrency}`;
+      rightRateDisplay.textContent = `1 ${targetCurrency} = ${fixedResult} ${baseCurrency}`;
     }
   }
 };
 
-const handleInputEvent = (e) => {
-  if (e.target === curInput1) {
-    BaseToTarget = true;
-    handleInput(curInput1);
-    convertFirstInput();
-  } else if (e.target === curInput2) {
-    BaseToTarget = false;
-    handleInput(curInput2);
-    convertSecondInput();
+const handleInputChange = (e) => {
+  if (e.target === inputOne) {
+    isBaseToTarget = true;
+    validateInput(inputOne);
+    convertInputOne();
+  } else if (e.target === inputTwo) {
+    isBaseToTarget = false;
+    validateInput(inputTwo);
+    convertInputTwo();
   }
 };
 
-curInput1.addEventListener("input", handleInputEvent);
-curInput2.addEventListener("input", handleInputEvent);
+inputOne.addEventListener("input", handleInputChange);
+inputTwo.addEventListener("input", handleInputChange);
 
-leftButtons.forEach((button) => {
+leftCurrencyButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    if (selectedBaseCurrency !== button.textContent) {
-      selectedBaseCurrency = button.textContent;
-      setActiveButton();
-      if (BaseToTarget) {
-        convertFirstInput();
+    if (baseCurrency !== button.textContent) {
+      baseCurrency = button.textContent;
+      highlightActiveButton();
+      if (isBaseToTarget) {
+        convertInputOne();
       } else {
-        convertSecondInput();
+        convertInputTwo();
       }
     }
   });
 });
 
-rightButtons.forEach((button) => {
+rightCurrencyButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    if (selectedTargetCurrency !== button.textContent) {
-      selectedTargetCurrency = button.textContent;
-      setActiveButton();
-      if (BaseToTarget === false) {
-        convertSecondInput();
+    if (targetCurrency !== button.textContent) {
+      targetCurrency = button.textContent;
+      highlightActiveButton();
+      if (!isBaseToTarget) {
+        convertInputTwo();
       } else {
-        convertFirstInput();
+        convertInputOne();
       }
     }
   });
 });
-const handleInput = (input) => {
-  let val = input.value;
 
-  val = val.replace(/,/g, ".");
+const validateInput = (input) => {
+  let value = input.value;
+  value = value.replace(/,/g, ".");
 
-  let hasE = false;
-
-  let cleaned = val
+  let hasExponent = false;
+  let cleaned = value
     .split("")
     .filter((char, index) => {
       if (char >= "0" && char <= "9") return true;
       if (char === ".") return true;
       if (char === "e") {
-        if (hasE) return false;
-        hasE = true;
-        return index > 0 && val[index - 1] >= "0" && val[index - 1] <= "9";
+        if (hasExponent) return false;
+        hasExponent = true;
+        return index > 0 && value[index - 1] >= "0" && value[index - 1] <= "9";
       }
       return false;
     })
@@ -246,11 +245,9 @@ const handleInput = (input) => {
     if (parts.length > 2) {
       parts = [parts[0], parts.slice(1).join("")];
     }
-
     if (parts[1] && parts[1].length > 5) {
       parts[1] = parts[1].slice(0, 5);
     }
-
     cleaned = parts.join(".");
   }
 
@@ -279,11 +276,7 @@ const handleInput = (input) => {
     input.value = cleaned;
     return;
   }
-  if (
-    cleaned.startsWith("0") &&
-    !cleaned.startsWith("0.") &&
-    cleaned.length > 1
-  ) {
+  if (cleaned.startsWith("0") && !cleaned.startsWith("0.") && cleaned.length > 1) {
     if (cleaned[1] >= "1" && cleaned[1] <= "9") {
       cleaned = "0." + cleaned.slice(1);
     } else {
@@ -293,3 +286,4 @@ const handleInput = (input) => {
 
   input.value = cleaned;
 };
+
